@@ -10,7 +10,7 @@ bot = Bot(TOKEN)
 storage = MemoryStorage()  # Инициализация хранилища FSM
 dp = Dispatcher(bot=bot, storage=storage)  # Передача хранилища в диспетчер
 
-
+voice = {'femail': "Акылай", "male": "Актан"}
 
 class UserState(StatesGroup):
     CHOOSING = State()
@@ -32,7 +32,7 @@ async def start_handler(message: types.Message):
     femail_button = types.InlineKeyboardButton(text="Акылай", callback_data="femail")
     keyboard.row(male_button, femail_button)
 
-    await message.reply(f"Hi, {user_name} !!!!!\nВыберите команду:", reply_markup=keyboard)
+    await message.reply(f"Салам, {user_name} !!!!!\nҮндү тандаңыз:", reply_markup=keyboard)
     await UserState.CHOOSING.set()
 
 
@@ -46,7 +46,7 @@ async def process_callback(callback_query: types.CallbackQuery, state: FSMContex
     # Завершаем состояние пользователя и отвечаем сообщением
     await state.finish()
     await bot.send_message(callback_query.from_user.id,
-                           f"Вы выбрали команду /{user_choice}.\nВведите сообщение, и я добавлю название выбранной команды в начало ответа.")
+                           f"Сиз {voice[user_choice]}дын үнүн тандадыңыз.\nТекст жазыңыз:")
 
 
 @dp.message_handler(commands=['male', 'femail'], state=UserState.CHOOSING)
@@ -58,7 +58,7 @@ async def choose_handler(message: types.Message, state: FSMContext):
     # Завершаем состояние пользователя и отвечаем сообщением
     await state.finish()
     await message.reply(
-        f"Вы выбрали команду /{user_choice}.\nВведите сообщение, и я добавлю название выбранной команды в начало ответа.")
+        f"Сиз {voice[user_choice]}дын үнүн тандадыңыз.\nТекст жазыңыз:")
 
 
 @dp.message_handler(state=None)
@@ -66,8 +66,12 @@ async def message_handler(message: types.Message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name
     chosen_command = memory.get(user_id)
-    await message.reply(f"/{chosen_command} Hi, {user_name} !!!!!\n\n{message.text}")
-
+    if chosen_command == 'femail':
+        audio_path = 'femail/audio.wav'
+    else:
+        audio_path = 'male/audio.wav'
+    audio = types.InputFile(audio_path)
+    await bot.send_audio(chat_id=user_id, audio=audio)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
